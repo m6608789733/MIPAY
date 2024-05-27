@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const {createClient} = require('@supabase/supabase-js');
+const xlsx = require('xlsx');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -150,7 +151,52 @@ app.delete('/delete', async(req,res)=>{
     }
 }
 );
+app.get('/download', async(req,res)=>{
+    const date = req.query.date;
+    try {
+        const {data, error} = await supabase.from('data_table').select('date, account, site, name, item_name, duration, price, payment_method, is_purchased, purchase_amount, purchase_account, transaction_id, purchase_team, wallet').eq('date', date);
 
+        if (error) {
+            throw error;
+        }
+
+        const formattedData = data.map(item=>({
+            '日期': item.date,
+            '账号': item.account,
+            '站点': item.site,
+            '姓名': item.name,
+            '名称': item.item_name,
+            '挂单时长': item.duration,
+            '出售金额': item.price,
+            '收款方式': item.payment_method,
+            '是否购买': item.is_purchased ? '是' : '否',
+            '购买金额': item.purchase_amount,
+            '购买账号': item.purchase_account,
+            '流水单号': item.transaction_id,
+            '购买团队': item.purchase_team,
+            '钱包': item.wallet
+        }));
+
+        const ws = xlsx.utils.json_to_sheet(formattedData);
+        const wb = xlsx.utils.book_new();
+        xlsx.utils.book_append_sheet(wb, ws, 'Data');
+
+        res.setHeader('Content-Disposition', `attachment; filename="data_${date}.xlsx"`);
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+        const buffer = xlsx.write(wb, {
+            type: 'buffer',
+            bookType: 'xlsx'
+        });
+        res.send(buffer);
+    } catch (error) {
+        console.error('Error downloading data:', error.message);
+        res.status(500).json({
+            error: 'Error downloading data from Supabase'
+        });
+    }
+}
+);
 // Start the server
 app.listen(PORT, ()=>{
     console.log(`Server is running on http://localhost:${PORT}`);
