@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const {createClient} = require('@supabase/supabase-js');
 const xlsx = require('xlsx');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -24,6 +25,9 @@ app.use((req,res,next)=>{
     next();
 }
 );
+
+// Serve static files from the "public" directory
+app.use(express.static(path.join(__dirname, 'public')));
 
 // GET endpoint for fetching data by date
 app.get('/query', async(req,res)=>{
@@ -172,9 +176,6 @@ app.get('/download', async(req,res)=>{
     }
 }
 );
-
-// Serve static files
-app.use(express.static('public'));
 
 // Start the server
 app.listen(PORT, ()=>{
