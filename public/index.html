@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Data Table Management</title>
+        <link href="layui/css/layui.css" rel="stylesheet">
+    </head>
+    <body>
+        <div style="margin: 20px;">
+            <div class="layui-form-item">
+                <label class="layui-form-label">日期</label>
+                <div class="layui-input-inline">
+                    <input type="text" class="layui-input" id="datePicker" placeholder="选择日期">
+                </div>
+                <button class="layui-btn" id="queryBtn">查询</button>
+                <button class="layui-btn layui-btn-normal" id="addBtn">新增</button>
+                <button class="layui-btn layui-btn-primary" id="downloadBtn">下载</button>
+            </div>
+            <table class="layui-table" id="dataTable">
+                <thead>
+                    <tr>
+                        <th>日期</th>
+                        <th>账号</th>
+                        <th>站点</th>
+                        <th>姓名</th>
+                        <th>名称</th>
+                        <th>挂单时长</th>
+                        <th>出售金额</th>
+                        <th>收款方式</th>
+                        <th>是否购买</th>
+                        <th>购买金额</th>
+                        <th>购买账号</th>
+                        <th>流水单号</th>
+                        <th>购买团队</th>
+                        <th>钱包</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <!-- Data will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+    </body>
+    <!-- 用于添加数据的模态模板 -->
+    <script type="text/html" id="addModalTemplate">        
+        <div class="layui-form" style="padding: 20px;">
+            <div class="layui-form-item">
+                <label class="layui-form-label">日期</label>
+                <div class="layui-input-block">
+                    <input type="text" class="layui-input" id="addDatePicker" placeholder="选择日期">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">账号</label>
+                <div class="layui-input-block">
+                    <input type="text" class="layui-input" id="account">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">站点</label>
+                <div class="layui-input-block">
+                    <input type="text" class="layui-input" id="site">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">姓名</label>
+                <div class="layui-input-block">
+                    <input type="text" class="layui-input" id="name">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">名称</label>
+                <div class="layui-input-block">
+                    <input type="text" class="layui-input" id="itemName">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">挂单时长</label>
+                <div class="layui-input-block">
+                    <input type="text" class="layui-input" id="duration">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">出售金额</label>
+                <div class="layui-input-block">
+                    <input type="text" class="layui-input" id="price">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">收款方式</label>
+                <div class="layui-input-block">
+                    <input type="text" class="layui-input" id="paymentMethod">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">是否购买</label>
+                <div class="layui-input-block">
+                    <input type="checkbox" id="isPurchased" lay-skin="primary">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">购买金额</label>
+                <div class="layui-input-block">
+                    <input type="text" class="layui-input" id="purchaseAmount">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">购买账号</label>
+                <div class="layui-input-block">
+                    <input type="text" class="layui-input" id="purchaseAccount">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">流水单号</label>
+                <div class="layui-input-block">
+                    <input type="text" class="layui-input" id="transactionId">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">购买团队</label>
+                <div class="layui-input-block">
+                    <input type="text" class="layui-input" id="purchaseTeam">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">钱包</label>
+                <div class="layui-input-block">
+                    <input type="text" class="layui-input" id="wallet">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-input-block">
+                    <button class="layui-btn" id="confirmAddBtn">确认</button>
+                    <button class="layui-btn layui-btn-primary" id="cancelAddBtn">取消</button>
+                </div>
+            </div>
+        </div>        
+    </script>
+    <!-- 用于编辑数据的模态模板 -->
+    <script type="text/html" id="editModalTemplate">        
+        <div class="layui-form" style="padding: 20px;">
+            <div class="layui-form-item">
+                <label class="layui-form-label">是否购买</label>
+                <div class="layui-input-block">
+                    <input type="checkbox" id="editIsPurchased" lay-skin="primary">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">购买金额</label>
+                <div class="layui-input-block">
+                    <input type="text" class="layui-input" id="editPurchaseAmount">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">购买账号</label>
+                <div class="layui-input-block">
+                    <input type="text" class="layui-input" id="editPurchaseAccount">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">流水单号</label>
+                <div class="layui-input-block">
+                    <input type="text" class="layui-input" id="editTransactionId">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">购买团队</label>
+                <div class="layui-input-block">
+                    <input type="text" class="layui-input" id="editPurchaseTeam">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">钱包</label>
+                <div class="layui-input-block">
+                    <input type="text" class="layui-input" id="editWallet">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-input-block">
+                    <button class="layui-btn" id="confirmEditBtn">确认</button>
+                    <button class="layui-btn layui-btn-primary" id="cancelEditBtn">取消</button>
+                </div>
+            </div>
+        </div>        
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
+    <script src="layui/layui.js"></script>
+    <script src="script.js"></script>
+</html>
