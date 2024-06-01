@@ -31,7 +31,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // GET endpoint for fetching data by date
 app.get('/query', async(req,res)=>{
-    const {date} = req.query;
+    const {date, page=1, limit=20} = req.query;
     console.log('Received Date:', date);
     if (!date) {
         return res.status(400).json({
@@ -39,11 +39,18 @@ app.get('/query', async(req,res)=>{
         });
     }
     try {
-        const {data, error} = await supabase.from('data_table').select('*').eq('date', date);
+        const {data, error, count} = await supabase.from('data_table').select('*', {
+            count: 'exact'
+        }).eq('date', date).range((page - 1) * limit, page * limit - 1);
+
         if (error)
             throw error;
+
         res.status(200).json({
-            data
+            data,
+            count,
+            totalPages: Math.ceil(count / limit),
+            currentPage: page
         });
     } catch (error) {
         console.error('Error fetching data:', error.message);
@@ -177,7 +184,6 @@ app.get('/download', async(req,res)=>{
 }
 );
 
-// Start the server
 app.listen(PORT, ()=>{
     console.log(`Server is running on port ${PORT}`);
 }
