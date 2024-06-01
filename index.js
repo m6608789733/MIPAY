@@ -31,7 +31,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // GET endpoint for fetching data by date
 app.get('/query', async(req,res)=>{
-    const {date, page=1, limit=20} = req.query;
+    const {date, page=1, limit=15} = req.query;
+    // 将limit设置为10
     console.log('Received Date:', date);
     if (!date) {
         return res.status(400).json({
@@ -48,7 +49,8 @@ app.get('/query', async(req,res)=>{
 
         res.status(200).json({
             data,
-            count,
+            totalRecords: count,
+            // 返回总记录数
             totalPages: Math.ceil(count / limit),
             currentPage: page
         });
