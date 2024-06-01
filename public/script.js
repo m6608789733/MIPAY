@@ -1,6 +1,6 @@
 $(document).ready(function() {
-    layui.use(['laydate', 'layer', 'form'], function() {
-        const {laydate, layer, form} = layui;
+    layui.use(['laydate', 'layer', 'form', 'laypage'], function() {
+        const {laydate, layer, form, laypage} = layui;
 
         const setTodayDatePicker = (selector)=>{
             const today = new Date().toISOString().split('T')[0];
@@ -12,7 +12,6 @@ $(document).ready(function() {
         ;
 
         $(document).keyup(function(e) {
-            // 27 是 ESC 键的键码
             if (e.keyCode === 27) {
                 layer.closeAll();
             }
@@ -30,10 +29,8 @@ $(document).ready(function() {
             };
 
             if (method === 'GET') {
-                // If it's a GET request, append data as query parameters
                 ajaxOptions.url += '?' + $.param(data);
             } else {
-                // For other request types, send data as JSON
                 ajaxOptions.data = JSON.stringify(data);
                 ajaxOptions.contentType = 'application/json';
             }
@@ -63,28 +60,32 @@ $(document).ready(function() {
         }
         ;
 
-        const setupPagination = (totalPages,currentPage)=>{
-            const paginationContainer = $('#pagination');
-            paginationContainer.empty();
-            for (let i = 1; i <= totalPages; i++) {
-                const pageButton = $('<button></button>').text(i);
-                if (i === currentPage) {
-                    pageButton.attr('disabled', true).addClass('current-page');
-                }
-                pageButton.click(()=>{
-                    const selectedDate = $('#datePicker').val();
-                    fetchData('/query', 'GET', {
-                        date: selectedDate,
-                        page: i
-                    }, (response)=>{
-                        populateTable(response.data);
-                        setupPagination(response.totalPages, response.currentPage);
+        const setupPagination = (totalRecords,currentPage)=>{
+            layui.use('laypage', function() {
+                const laypage = layui.laypage;
+
+                laypage.render({
+                    elem: 'pagination',
+                    count: totalRecords,
+                    limit: 15,
+                    curr: currentPage,
+                    // 使用传入的当前页码
+                    layout: ['prev', 'page', 'next'],
+                    jump: function(obj, first) {
+                        if (!first) {
+                            const selectedDate = $('#datePicker').val();
+                            fetchData('/query', 'GET', {
+                                date: selectedDate,
+                                page: obj.curr // 使用 laypage 提供的当前页码
+                            }, function(response) {
+                                populateTable(response.data);
+                                // 更新当前页码
+                                setupPagination(response.totalRecords, obj.curr);
+                            });
+                        }
                     }
-                    );
-                }
-                );
-                paginationContainer.append(pageButton);
-            }
+                });
+            });
         }
         ;
 
@@ -111,7 +112,9 @@ $(document).ready(function() {
                 }, (response)=>{
                     layer.closeAll('loading');
                     populateTable(response.data);
-                    setupPagination(response.totalPages, response.currentPage);
+                    // Parse currentPage to integer
+                    const currentPage = parseInt(response.currentPage);
+                    setupPagination(response.totalRecords, currentPage);
                 }
                 );
             }
@@ -130,6 +133,8 @@ $(document).ready(function() {
                     form.render();
                 }
             });
+
+            $(document).off('click', '#confirmAddBtn');
 
             $(document).on('click', '#confirmAddBtn', ()=>{
                 const newData = {
@@ -181,6 +186,8 @@ $(document).ready(function() {
                         form.render();
                     }
                 });
+
+                $(document).off('click', '#confirmEditBtn');
 
                 $(document).on('click', '#confirmEditBtn', function() {
                     const updatedData = {
