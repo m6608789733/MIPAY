@@ -17,6 +17,7 @@ $(document).ready(function() {
                 layer.closeAll();
             }
         });
+
         const fetchData = (url,method,data,successCallback)=>{
             const ajaxOptions = {
                 url,
@@ -62,6 +63,31 @@ $(document).ready(function() {
         }
         ;
 
+        const setupPagination = (totalPages,currentPage)=>{
+            const paginationContainer = $('#pagination');
+            paginationContainer.empty();
+            for (let i = 1; i <= totalPages; i++) {
+                const pageButton = $('<button></button>').text(i);
+                if (i === currentPage) {
+                    pageButton.attr('disabled', true).addClass('current-page');
+                }
+                pageButton.click(()=>{
+                    const selectedDate = $('#datePicker').val();
+                    fetchData('/query', 'GET', {
+                        date: selectedDate,
+                        page: i
+                    }, (response)=>{
+                        populateTable(response.data);
+                        setupPagination(response.totalPages, response.currentPage);
+                    }
+                    );
+                }
+                );
+                paginationContainer.append(pageButton);
+            }
+        }
+        ;
+
         $('#downloadBtn').click(()=>{
             const selectedDate = $('#datePicker').val();
             if (selectedDate) {
@@ -75,16 +101,17 @@ $(document).ready(function() {
 
         $('#queryBtn').click(()=>{
             const selectedDate = $('#datePicker').val();
-            //console.log('选定日期:', selectedDate);
             if (selectedDate) {
                 layer.load(2, {
                     shade: [0.1, '#fff']
                 });
                 fetchData('/query', 'GET', {
-                    date: selectedDate
+                    date: selectedDate,
+                    page: 1
                 }, (response)=>{
                     layer.closeAll('loading');
                     populateTable(response.data);
+                    setupPagination(response.totalPages, response.currentPage);
                 }
                 );
             }
@@ -124,7 +151,6 @@ $(document).ready(function() {
 
                 fetchData('/add', 'POST', newData, (response)=>{
                     layer.close(addModalIndex);
-                    //console.log('数据添加成功');
                     $('#queryBtn').click();
                 }
                 );
@@ -169,7 +195,6 @@ $(document).ready(function() {
 
                     fetchData('/edit', 'PUT', updatedData, (response)=>{
                         layer.closeAll();
-                        //console.log('Data updated successfully');
                         $('#queryBtn').click();
                     }
                     );
@@ -188,7 +213,6 @@ $(document).ready(function() {
                     id
                 }, (response)=>{
                     layer.close(index);
-                    //console.log('Data deleted successfully');
                     $('#queryBtn').click();
                 }
                 );
