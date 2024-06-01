@@ -2,9 +2,18 @@
 <html>
     <head>
         <meta charset="UTF-8">
-        <title>Data Table Management</title>
+        <title>MIPAY-推单</title>
         <link href="layui/css/layui.css" rel="stylesheet">
     </head>
+    <style>
+        #pagination button {
+            margin: 0 5px;
+        }
+
+        #pagination .current-page {
+            font-weight: bold;
+        }
+    </style>
     <body>
         <div style="margin: 20px;">
             <div class="layui-form-item">
@@ -40,10 +49,11 @@
                 <!-- Data will be inserted here -->
                 </tbody>
             </table>
+            <!-- 分页容器 -->
+            <div id="pagination" style="text-align: center; margin-top: 20px;"></div>
         </div>
-    </body>
-    <!-- 用于添加数据的模态模板 -->
-    <script type="text/html" id="addModalTemplate">        
+        <!-- 用于添加数据的模态模板 -->
+        <script type="text/html" id="addModalTemplate">            
         <div class="layui-form" style="padding: 20px;">
             <div class="layui-form-item">
                 <label class="layui-form-label">日期</label>
@@ -135,10 +145,10 @@
                     <button class="layui-btn layui-btn-primary" id="cancelAddBtn">取消</button>
                 </div>
             </div>
-        </div>        
-    </script>
-    <!-- 用于编辑数据的模态模板 -->
-    <script type="text/html" id="editModalTemplate">        
+        </div>    
+        </script>
+        <!-- 用于编辑数据的模态模板 -->
+        <script type="text/html" id="editModalTemplate">            
         <div class="layui-form" style="padding: 20px;">
             <div class="layui-form-item">
                 <label class="layui-form-label">是否购买</label>
@@ -182,9 +192,10 @@
                     <button class="layui-btn layui-btn-primary" id="cancelEditBtn">取消</button>
                 </div>
             </div>
-        </div>        
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
-    <script src="layui/layui.js"></script>
-    <script src="script.js"></script>
+        </div>    
+        </script>
+        <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
+        <script src="layui/layui.js"></script>
+        <script src="script.js"></script>
+    </body>
 </html>
