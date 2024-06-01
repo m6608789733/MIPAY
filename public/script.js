@@ -69,17 +69,22 @@ $(document).ready(function() {
                     count: totalRecords,
                     limit: 15,
                     curr: currentPage,
-                    // 使用传入的当前页码
+                    // Use the provided currentPage
                     layout: ['prev', 'page', 'next'],
                     jump: function(obj, first) {
                         if (!first) {
                             const selectedDate = $('#datePicker').val();
+                            const loadingIndex = layer.load(2, {
+                                shade: [0.1, '#fff']
+                            });
                             fetchData('/query', 'GET', {
                                 date: selectedDate,
-                                page: obj.curr // 使用 laypage 提供的当前页码
+                                page: obj.curr // Use the current page number provided by laypage
                             }, function(response) {
+                                layer.close(loadingIndex);
+                                // Close loading indicator after data is loaded
                                 populateTable(response.data);
-                                // 更新当前页码
+                                // Update current page number
                                 setupPagination(response.totalRecords, obj.curr);
                             });
                         }
