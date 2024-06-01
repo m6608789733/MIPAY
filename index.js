@@ -3,6 +3,9 @@ const bodyParser = require('body-parser');
 const {createClient} = require('@supabase/supabase-js');
 const xlsx = require('xlsx');
 const path = require('path');
+const cors = require('cors');
+const morgan = require('morgan');
+const helmet = require('helmet');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,34 +14,44 @@ const PORT = process.env.PORT || 3000;
 const SUPABASE_URL = 'https://mgbmlagwujsehfqxbfzw.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nYm1sYWd3dWpzZWhmcXhiZnp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTY1NDY3MTYsImV4cCI6MjAzMjEyMjcxNn0.-a-ZtjJeu-7w2v78xt-3p9vEqsLpVSG0f7HB0z-vOQQ';
 
-// Initialize Supabase client
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+// Initialize Supabase client with connection pooling
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: {
+        persistSession: false
+    },
+    global: {
+        headers: {
+            'x-connection-pooling': 'true'
+        }
+    },
+});
 
-// Middleware for parsing JSON bodies
+// Middleware
 app.use(bodyParser.json());
-
-// CORS middleware
-app.use((req,res,next)=>{
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    next();
-}
-);
-
-// Serve static files from the "public" directory
+app.use(cors());
+app.use(morgan('combined'));
+app.use(helmet());
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Helper function to handle errors
+const handleError = (res,error,message)=>{
+    console.error(message, error);
+    res.status(500).json({
+        error: message
+    });
+}
+;
 
 // GET endpoint for fetching data by date
 app.get('/query', async(req,res)=>{
     const {date, page=1, limit=15} = req.query;
-    // 将limit设置为10
-    console.log('Received Date:', date);
+
     if (!date) {
         return res.status(400).json({
             error: 'Date parameter is required'
         });
     }
+
     try {
         const {data, error, count} = await supabase.from('data_table').select('*', {
             count: 'exact'
@@ -50,15 +63,11 @@ app.get('/query', async(req,res)=>{
         res.status(200).json({
             data,
             totalRecords: count,
-            // 返回总记录数
             totalPages: Math.ceil(count / limit),
-            currentPage: page
+            currentPage: parseInt(page, 10),
         });
     } catch (error) {
-        console.error('Error fetching data:', error.message);
-        res.status(500).json({
-            error: 'Error fetching data from Supabase'
-        });
+        handleError(res, error, 'Error fetching data from Supabase');
     }
 }
 );
@@ -66,18 +75,18 @@ app.get('/query', async(req,res)=>{
 // GET endpoint for fetching data by ID
 app.get('/queryById', async(req,res)=>{
     const {id} = req.query;
+
     try {
         const {data, error} = await supabase.from('data_table').select('*').eq('id', id);
+
         if (error)
             throw error;
+
         res.status(200).json({
             data: data[0]
         });
     } catch (error) {
-        console.error('Error fetching data by ID:', error.message);
-        res.status(500).json({
-            error: 'Error fetching data from Supabase'
-        });
+        handleError(res, error, 'Error fetching data by ID from Supabase');
     }
 }
 );
@@ -85,18 +94,18 @@ app.get('/queryById', async(req,res)=>{
 // POST endpoint for adding data
 app.post('/add', async(req,res)=>{
     const newData = req.body;
+
     try {
         const {data, error} = await supabase.from('data_table').insert([newData]);
+
         if (error)
             throw error;
+
         res.status(201).json({
             data
         });
     } catch (error) {
-        console.error('Error adding data:', error.message);
-        res.status(500).json({
-            error: 'Error adding data to Supabase'
-        });
+        handleError(res, error, 'Error adding data to Supabase');
     }
 }
 );
@@ -104,18 +113,18 @@ app.post('/add', async(req,res)=>{
 // PUT endpoint for editing data
 app.put('/edit', async(req,res)=>{
     const updatedData = req.body;
+
     try {
         const {data, error} = await supabase.from('data_table').update(updatedData).eq('id', updatedData.id);
+
         if (error)
             throw error;
+
         res.status(200).json({
             data
         });
     } catch (error) {
-        console.error('Error updating data:', error.message);
-        res.status(500).json({
-            error: 'Error updating data in Supabase'
-        });
+        handleError(res, error, 'Error updating data in Supabase');
     }
 }
 );
@@ -123,18 +132,18 @@ app.put('/edit', async(req,res)=>{
 // DELETE endpoint for deleting data
 app.delete('/delete', async(req,res)=>{
     const {id} = req.body;
+
     try {
         const {data, error} = await supabase.from('data_table').delete().eq('id', id);
+
         if (error)
             throw error;
+
         res.status(200).json({
             data
         });
     } catch (error) {
-        console.error('Error deleting data:', error.message);
-        res.status(500).json({
-            error: 'Error deleting data from Supabase'
-        });
+        handleError(res, error, 'Error deleting data from Supabase');
     }
 }
 );
@@ -142,13 +151,15 @@ app.delete('/delete', async(req,res)=>{
 // Endpoint for downloading data as an Excel file
 app.get('/download', async(req,res)=>{
     const {date} = req.query;
+
     try {
         const {data, error} = await supabase.from('data_table').select('*').eq('date', date);
+
         if (error)
             throw error;
 
         // Map the data to the desired format
-        const formattedData = data.map(item=>({
+        const formattedData = data.map((item)=>({
             '日期': item.date,
             '账号': item.account,
             '站点': item.site,
@@ -162,7 +173,7 @@ app.get('/download', async(req,res)=>{
             '购买账号': item.purchaseAccount,
             '流水单号': item.transactionId,
             '购买团队': item.purchaseTeam,
-            '钱包': item.wallet
+            '钱包': item.wallet,
         }));
 
         // Create a worksheet with the specified headers
@@ -178,14 +189,12 @@ app.get('/download', async(req,res)=>{
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.send(excelBuffer);
     } catch (error) {
-        console.error('Error downloading data:', error.message);
-        res.status(500).json({
-            error: 'Error downloading data from Supabase'
-        });
+        handleError(res, error, 'Error downloading data from Supabase');
     }
 }
 );
 
+// Start the server
 app.listen(PORT, ()=>{
     console.log(`Server is running on port ${PORT}`);
 }
